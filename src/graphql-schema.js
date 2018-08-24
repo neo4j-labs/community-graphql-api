@@ -70,7 +70,7 @@ export const resolvers = {
       WITH du, g
       ORDER BY g.updated_at DESC
       WITH du, COLLECT(g)[0] AS repo
-      RETURN du, repo ORDER BY repo.updated_at LIMIT $first`,
+      RETURN du, repo ORDER BY repo.updated_at DESC LIMIT $first`,
 
       baseUrl = 'https://community.neo4j.com/'
 
@@ -113,7 +113,7 @@ export const resolvers = {
       WITH *, 1.0 * (duration.inSeconds(datetime(), t.createdAt)).seconds/10000 AS ago
       WITH u, t, (10.0 * t.rating + coalesce(t.likeCount, 0) + coalesce(t.replyCount, 0))/(ago^2) AS score
       WITH u, COLLECT(t)[0] AS topic
-      RETURN u, topic LIMIT $limit
+      RETURN u, topic LIMIT $first
       `,
         baseUrl = 'https://community.neo4j.com/';
 
@@ -122,7 +122,7 @@ export const resolvers = {
         return result.records.map(record => {
 
           let user = record.get("u").properties,
-            topic = record.get("t").properties;
+            topic = record.get("topic").properties;
 
           return {
             title: topic.title,
