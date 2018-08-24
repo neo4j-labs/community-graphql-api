@@ -106,11 +106,14 @@ export const resolvers = {
 
       let session = context.driver.session();
 
+      // FIXME: inefficent query - computes score for all topics
       let query = `
       MATCH (u:DiscourseUser)-[:POSTED_CONTENT]->(t:DiscourseTopic)
       WHERE t.approved AND NOT "Exclude" IN labels(t)
       WITH *, 1.0 * (duration.inSeconds(datetime(), t.createdAt)).seconds/10000 AS ago
-      RETURN u, t, (10.0 * t.rating + coalesce(t.likeCount, 0) + coalesce(t.replyCount, 0))/(ago^2) AS score ORDER BY score DESC LIMIT $first
+      WITH u, t, (10.0 * t.rating + coalesce(t.likeCount, 0) + coalesce(t.replyCount, 0))/(ago^2) AS score
+      WITH u, COLLECT(t)[0] AS topic
+      RETURN u, topic LIMIT $limit
       `,
         baseUrl = 'https://community.neo4j.com/';
 
