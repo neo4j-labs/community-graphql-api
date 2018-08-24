@@ -66,10 +66,12 @@ export const resolvers = {
       // FIXME: This query is fragile, depending 
       let query = `
       MATCH (du:DiscourseUser)-[*0..2]-(ghu:User)-[:CREATED]->(g:GitHub)
+      WHERE NOT "Exclude" IN labels(g)
       WITH du, g
       ORDER BY g.updated_at DESC
       WITH du, COLLECT(g)[0] AS repo
-      RETURN du, repo LIMIT $first`,
+      RETURN du, repo ORDER BY repo.updated_at LIMIT $first`,
+
       baseUrl = 'https://community.neo4j.com/'
 
       return session.run(query, params)
@@ -106,7 +108,7 @@ export const resolvers = {
 
       let query = `
       MATCH (u:DiscourseUser)-[:POSTED_CONTENT]->(t:DiscourseTopic)
-      WHERE t.approved
+      WHERE t.approved AND NOT "Exclude" IN labels(t)
       WITH *, 1.0 * (duration.inSeconds(datetime(), t.createdAt)).seconds/10000 AS ago
       RETURN u, t, (10.0 * t.rating + coalesce(t.likeCount, 0) + coalesce(t.replyCount, 0))/(ago^2) AS score ORDER BY score DESC LIMIT $first
       `,
