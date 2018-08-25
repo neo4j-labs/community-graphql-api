@@ -1,5 +1,5 @@
 import { typeDefs, resolvers } from "./graphql-schema";
-import { ApolloServer, gql, makeExecutableSchema } from "apollo-server";
+import { ApolloServer, makeExecutableSchema } from "apollo-server";
 import { v1 as neo4j } from "neo4j-driver";
 import dotenv from "dotenv";
 
