@@ -1,5 +1,10 @@
 import moment from 'moment';
 
+let topCommunityOpenSourceProjects_cached,
+    topCommunityBlogsAndContent_cached,
+    thisWeekInNeo4j_cached,
+    topNewCertifiedDevelopers_cached;
+
 export const typeDefs = `
 type Twin4jContent {
   featuredCommunityMember: CommunityMember
@@ -70,13 +75,11 @@ export const resolvers = {
       WITH du, g
       ORDER BY g.updated_at DESC
       WITH du, COLLECT(g)[0] AS repo
-      RETURN du, repo ORDER BY repo.updated_at DESC LIMIT $first`,
-
-      baseUrl = 'https://community.neo4j.com/'
+      RETURN du, repo ORDER BY repo.updated_at DESC LIMIT $first`;
 
       return session.run(query, params)
       .then( result => {
-        return result.records.map(record => {
+        const resData = result.records.map(record => {
 
           let user = record.get("du").properties,
             repo = record.get("repo").properties;
@@ -94,9 +97,14 @@ export const resolvers = {
             }
           }
         })
+
+        topCommunityOpenSourceProjects_cached = resData;
+
+        return resData;
       })
       .catch(error => {
-        throw new Error(error);
+        console.log(error);
+        return topCommunityOpenSourceProjects_cached;
       })
       .finally( ()=> {
         session.close();
@@ -119,7 +127,7 @@ export const resolvers = {
 
       return session.run(query, params)
       .then( result => {
-        return result.records.map(record => {
+        const resData = result.records.map(record => {
 
           let user = record.get("u").properties,
             topic = record.get("topic").properties;
@@ -134,9 +142,14 @@ export const resolvers = {
             }
           }
         })
+
+        topCommunityBlogsAndContent_cached = resData;
+        return resData;
+
       })
       .catch(error => {
-        throw new Error(error);
+        console.log(error);
+        return topCommunityBlogsAndContent_cached;
       })
       .finally( ()=> {
         session.close();
@@ -153,7 +166,7 @@ export const resolvers = {
 
       return session.run(query, params)
       .then( result => {
-        return result.records.map(record => {
+        const resData = result.records.map(record => {
 
           const user = record.get("du").properties,
             exam = record.get("c").properties;
@@ -167,9 +180,13 @@ export const resolvers = {
             }
           }
         })
+
+        topNewCertifiedDevelopers_cached = resData;
+        return resData;
       })
       .catch(error => {
-        throw new Error(error);
+        console.log(error);
+        return topNewCertifiedDevelopers_cached;
       })
       .finally( ()=> {
         session.close();
@@ -190,8 +207,7 @@ export const resolvers = {
       WHERE feature.anchor STARTS WITH "features"
       WITH t, u, articles, COLLECT(feature) AS features
       RETURN t, u, features, articles
-      `,
-      baseUrl = 'https://community.neo4j.com/'
+      `;
 
       return session.run(query, params)
       .then( result => {
@@ -205,7 +221,7 @@ export const resolvers = {
                 articles = record.get("articles");
           
 
-          return {
+          const resData =  {
             date: moment(new Date(twin4j.date)).format('Do MMM YYYY'),
             url: twin4j.link,
             text: twin4j.summaryText,
@@ -226,10 +242,14 @@ export const resolvers = {
                 tag: a.tag
               }
             })
-          }  
+          };
+          
+          thisWeekInNeo4j_cached = resData;
+          return resData;
         })
       .catch(error => {
-        throw new Error(error);
+        console.log(error);
+        return thisWeekInNeo4j_cached;
       })
       .finally( ()=> {
         session.close();
