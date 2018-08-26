@@ -196,17 +196,18 @@ export const resolvers = {
 
       let session = context.driver.session();
 
+      // FIXME: We might be able to connect the DiscourseUser to the featured community member
+      //        but not currently using that data. 
       let query = `
       MATCH (t:TWIN4j)
       WITH t ORDER BY t.date DESC LIMIT 1 
-      MATCH (t)-[:FEATURED]->(u:User)
+      //OPTIONAL MATCH (t)-[:FEATURED]->(u:User)
       OPTIONAL MATCH (t)-[:CONTAINS_TAG]->(article:TWIN4jTag)
       WHERE article.anchor STARTS WITH "articles"
-      WITH t, u, COLLECT(article) AS articles
+      WITH t, COLLECT(article) AS articles
       OPTIONAL MATCH (t)-[:CONTAINS_TAG]->(feature:TWIN4jTag)
       WHERE feature.anchor STARTS WITH "features"
-      WITH t, u, articles, COLLECT(feature) AS features
-      RETURN t, u, features, articles
+      RETURN t, COLLECT(feature) AS features, articles
       `;
 
       return session.run(query, params)
@@ -214,8 +215,7 @@ export const resolvers = {
 
         var record = result.records[0];
 
-          const twin4j = record.get("t").properties,
-            user = record.get("u").properties;
+          const twin4j = record.get("t").properties;
 
           const features = record.get("features"),
                 articles = record.get("articles");
