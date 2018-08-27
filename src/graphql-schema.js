@@ -77,7 +77,7 @@ export const resolvers = {
       // FIXME: This query is fragile, depending 
       let query = `
       MATCH (du:DiscourseUser)-[*0..2]-(ghu:User)-[:CREATED]->(g:GitHub)
-      WHERE NOT "Exclude" IN labels(g)
+      WHERE NOT "Exclude" IN labels(g) AND exists(g.updated_at) AND g.favorites > 0
       WITH du, g
       ORDER BY g.updated_at DESC
       WITH du, COLLECT(g)[0] AS repo
