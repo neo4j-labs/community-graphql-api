@@ -13,6 +13,12 @@ type Twin4jContent {
   text: String
   features: [Twin4jFeature]
   articles: [Twin4jArticle]
+  topItems: [Twin4jItem]
+}
+
+type Twin4jItem {
+  tag: String
+  url: String
 }
 
 type Twin4jFeature {
@@ -217,8 +223,23 @@ export const resolvers = {
 
           const twin4j = record.get("t").properties;
 
-          const features = record.get("features"),
-                articles = record.get("articles");
+          const features = record.get("features").map((fn) => {
+                  const f = fn.properties;
+                  return {
+                    url: twin4j.link + '#' + f.anchor,
+                    tag: f.tag
+                  }
+                }),
+                articles = record.get("articles").map( (an) => {
+                  const a = an.properties;
+                  return {
+                    url: twin4j.link + '#' + a.anchor,
+                    tag: a.tag
+                  }
+                });
+
+          const topItems = [...features, ...articles].slice(0,5);
+
           
 
           const resData =  {
@@ -228,20 +249,9 @@ export const resolvers = {
             featuredCommunityMember: {
               image: twin4j.image 
             },
-            features: features.map((fn) => {
-              const f = fn.properties;
-              return {
-                url: twin4j.link + '#' + f.anchor,
-                tag: f.tag
-              }
-            }),
-            articles: articles.map( (an) => {
-              const a = an.properties;
-              return {
-                url: twin4j.link + '#' + a.anchor,
-                tag: a.tag
-              }
-            })
+            features: features,
+            articles: articles,
+            topItems: topItems
           };
           
           thisWeekInNeo4j_cached = resData;
