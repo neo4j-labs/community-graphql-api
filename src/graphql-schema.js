@@ -126,6 +126,7 @@ export const resolvers = {
       WHERE t.approved AND NOT "Exclude" IN labels(t)
       WITH *, 1.0 * (duration.inSeconds(datetime(), t.createdAt)).seconds/10000 AS ago
       WITH u, t, (10.0 * t.rating + coalesce(t.likeCount, 0) + coalesce(t.replyCount, 0))/(ago^2) AS score
+      WITH u, t ORDER BY score DESC
       WITH u, COLLECT(t)[0] AS topic
       RETURN u, topic LIMIT $first
       `,
