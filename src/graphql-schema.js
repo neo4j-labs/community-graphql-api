@@ -168,7 +168,9 @@ export const resolvers = {
 
       let query = `
       MATCH (du:DiscourseUser)<-[:DISCOURSE_ACCOUNT]-(u:User)-[:TOOK]->(c:Certification {passed: true})
-      RETURN du, u, c ORDER BY du.id DESC LIMIT $first
+      WITH * ORDER BY c.finished
+      WITH du, u, COLLECT(c) AS exams
+      RETURN du, u, exams[0] AS c ORDER BY du.id DESC LIMIT $first
       `;
 
       return session.run(query, params)
