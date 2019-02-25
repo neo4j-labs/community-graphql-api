@@ -76,12 +76,24 @@ export const resolvers = {
 
       // FIXME: This query is fragile, depending 
       let query = `
+      MATCH (u:DiscourseUser)-[:POSTED_CONTENT]->(t:DiscourseTopic {categoryId: 9})
+      WHERE t.approved AND NOT "Exclude" IN labels(t)
+      WITH *, 1.0 * (duration.inSeconds(datetime(), t.createdAt)).seconds/10000 AS ago
+      WITH u, t, (10.0 * t.rating + coalesce(t.likeCount, 0) + coalesce(t.replyCount, 0))/(ago^2) AS score
+      WITH u, t, score ORDER BY score DESC
+      WITH u, COLLECT({t:t, score:score}) AS topics
+      WITH u AS du, topics[0].t AS repo
+      RETURN du, repo {.title, pushed: repo.createdAt, description: "", language: "", url: "https://community.neo4j.com/t/" + repo.slug }
+      ORDER BY repo.score DESC LIMIT toInteger(ceil($first/2.0))
+
+      UNION
+ 
       MATCH (du:DiscourseUser)-[*0..2]-(ghu:User)-[:CREATED]->(g:GitHub)
       WHERE NOT "Exclude" IN labels(g) AND exists(g.updated_at) AND g.favorites > 0
       WITH DISTINCT du, g
       ORDER BY g.updated_at DESC
       WITH du, COLLECT(g)[0] AS repo
-      RETURN du, repo ORDER BY repo.updated_at DESC LIMIT $first`;
+      RETURN du, repo {.title, .language, .url, .description, .pushed} ORDER BY repo.updated_at DESC LIMIT toInteger(floor($first/2.0))`;
 
       return session.run(query, params)
       .then( result => {
