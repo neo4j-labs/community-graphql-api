@@ -100,7 +100,7 @@ export const resolvers = {
         const resData = result.records.map(record => {
 
           let user = record.get("du").properties,
-            repo = record.get("repo").properties;
+            repo = record.get("repo");
 
           return {
             title: repo.title,
