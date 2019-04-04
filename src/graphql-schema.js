@@ -1,9 +1,21 @@
 import moment from 'moment';
+import { v1 as neo4j } from "neo4j-driver";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 let topCommunityOpenSourceProjects_cached,
     topCommunityBlogsAndContent_cached,
     thisWeekInNeo4j_cached,
     topNewCertifiedDevelopers_cached;
+
+let driver = neo4j.driver(
+  process.env.NEO4J_URI || "bolt://localhost:7687",
+  neo4j.auth.basic(
+    process.env.NEO4J_USER || "neo4j",
+    process.env.NEO4J_PASSWORD || "neo4j"
+  )
+);
 
 export const typeDefs = `
 type Twin4jContent {
@@ -72,7 +84,7 @@ type Query {
 export const resolvers = {
   Query: {
     topCommunityOpenSourceProjects: (_, params, context) => {
-      let session = context.driver.session();
+      let session = driver.session();
 
       // FIXME: This query is fragile, depending 
       let query = `
@@ -121,7 +133,9 @@ export const resolvers = {
         return resData;
       })
       .catch(error => {
+        console.log(new Date());
         console.log(error);
+        updateDriver();
         return topCommunityOpenSourceProjects_cached;
       })
       .finally( ()=> {
@@ -130,11 +144,11 @@ export const resolvers = {
     },
     topCommunityBlogsAndContent: (_, params, context) => {
 
-      let session = context.driver.session();
+      let session = driver.session();
 
       // FIXME: inefficent query - computes score for all topics
       let query = `
-      MATCH (u:DiscourseUser)-[:POSTED_CONTENT]->(t:DiscourseTopic)
+      MATCH (u:DiscourseUser)-[:POSTED_CONTENT]->(t:DiscourseTopic {categoryId: 68})
       WHERE t.approved AND NOT "Exclude" IN labels(t)
       WITH *, 1.0 * (duration.inSeconds(datetime(), t.createdAt)).seconds/10000 AS ago
       WITH u, t, (10.0 * t.rating + coalesce(t.likeCount, 0) + coalesce(t.replyCount, 0))/(ago^2) AS score
@@ -168,6 +182,7 @@ export const resolvers = {
       })
       .catch(error => {
         console.log(error);
+        updateDriver()
         return topCommunityBlogsAndContent_cached;
       })
       .finally( ()=> {
@@ -176,7 +191,7 @@ export const resolvers = {
     },
     topNewCertifiedDevelopers: (_, params, context) => {
 
-      let session = context.driver.session();
+      let session = driver.session();
 
       let query = `
       MATCH (du:DiscourseUser)<-[:DISCOURSE_ACCOUNT]-(u:User)-[:TOOK]->(c:Certification {passed: true})
@@ -207,6 +222,7 @@ export const resolvers = {
       })
       .catch(error => {
         console.log(error);
+        updateDriver();
         return topNewCertifiedDevelopers_cached;
       })
       .finally( ()=> {
@@ -215,7 +231,7 @@ export const resolvers = {
     },
     thisWeekInNeo4j: (_, params, context) => {
 
-      let session = context.driver.session();
+      let session = driver.session();
 
       // FIXME: We might be able to connect the DiscourseUser to the featured community member
       //        but not currently using that data. 
@@ -274,6 +290,7 @@ export const resolvers = {
         })
       .catch(error => {
         console.log(error);
+        updateDriver();
         return thisWeekInNeo4j_cached;
       })
       .finally( ()=> {
@@ -294,3 +311,13 @@ const getAvatarUrl = (urlTemplate) => {
   }
 
 };
+
+const updateDriver = () => {
+  driver = neo4j.driver(
+    process.env.NEO4J_URI || "bolt://localhost:7687",
+    neo4j.auth.basic(
+      process.env.NEO4J_USER || "neo4j",
+      process.env.NEO4J_PASSWORD || "neo4j"
+    )
+  )
+}
