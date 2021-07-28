@@ -102,7 +102,7 @@ export const resolvers = {
       WITH u, COLLECT({t:t, score:score}) AS topics
       WITH u AS du, topics[0].t AS repo
       RETURN du, repo {.title, pushed: repo.createdAt, description: "", language: "", url: "https://community.neo4j.com/t/" + repo.slug }
-      ORDER BY repo.score DESC LIMIT toInteger(ceil($first/2.0))
+      ORDER BY repo.score DESC LIMIT toInteger(ceil(toInteger($first)/2.0))
 
       UNION
  
@@ -162,7 +162,7 @@ export const resolvers = {
       WITH u, t, (10.0 * t.rating + coalesce(t.likeCount, 0) + coalesce(t.replyCount, 0))/(ago^2) AS score
       WITH u, t, score ORDER BY score DESC
       WITH u, COLLECT({t:t, score:score}) AS topics
-    RETURN u, topics[0].t AS topic ORDER BY topics[0].score DESC LIMIT $first
+    RETURN u, topics[0].t AS topic ORDER BY topics[0].score DESC LIMIT toInteger($first)
       `,
         baseUrl = 'https://community.neo4j.com/';
 
@@ -205,7 +205,7 @@ export const resolvers = {
       MATCH (du:DiscourseUser)<-[:DISCOURSE_ACCOUNT]-(u:User)-[:TOOK]->(c:Certification {passed: true})
       WITH * ORDER BY c.finished
       WITH du, u, COLLECT(c) AS exams
-      RETURN du, u, exams[0] AS c ORDER BY du.id DESC LIMIT $first
+      RETURN du, u, exams[0] AS c ORDER BY du.id DESC LIMIT toInteger($first)
       `;
 
       return session.run(query, params)
