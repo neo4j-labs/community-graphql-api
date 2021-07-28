@@ -1,5 +1,5 @@
 import moment from 'moment';
-import { v1 as neo4j } from "neo4j-driver";
+import {v1 as neo4j} from "neo4j-driver";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -9,13 +9,19 @@ let topCommunityOpenSourceProjects_cached,
     thisWeekInNeo4j_cached,
     topNewCertifiedDevelopers_cached;
 
-let driver = neo4j.driver(
-  process.env.NEO4J_URI || "bolt://localhost:7687",
-  neo4j.auth.basic(
-    process.env.NEO4J_USER || "neo4j",
-    process.env.NEO4J_PASSWORD || "neo4j"
+
+const updateDriver = () => {
+  driver = neo4j.driver(
+    process.env.NEO4J_URI || "bolt://localhost:7687",
+    neo4j.auth.basic(
+      process.env.NEO4J_USER || "neo4j",
+      process.env.NEO4J_PASSWORD || "neo4j"
+    )
   )
-);
+  return driver;
+}
+
+let driver = updateDriver();
 
 export const typeDefs = `
 type Twin4jContent {
@@ -149,6 +155,8 @@ export const resolvers = {
       // FIXME: inefficent query - computes score for all topics
       let query = `
       MATCH (u:DiscourseUser)-[:POSTED_CONTENT]->(t:DiscourseTopic {categoryId: 68})
+      ,
+      (u)-[:POSTED_CONTENT]->(p:DiscoursePost {number:1})-[PART_OF]->(t)
       WHERE t.approved AND NOT "Exclude" IN labels(t)
       WITH *, 1.0 * (duration.inSeconds(datetime(), t.createdAt)).seconds/10000 AS ago
       WITH u, t, (10.0 * t.rating + coalesce(t.likeCount, 0) + coalesce(t.replyCount, 0))/(ago^2) AS score
@@ -311,13 +319,3 @@ const getAvatarUrl = (urlTemplate) => {
   }
 
 };
-
-const updateDriver = () => {
-  driver = neo4j.driver(
-    process.env.NEO4J_URI || "bolt://localhost:7687",
-    neo4j.auth.basic(
-      process.env.NEO4J_USER || "neo4j",
-      process.env.NEO4J_PASSWORD || "neo4j"
-    )
-  )
-}
