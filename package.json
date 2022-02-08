@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start-dev": "./node_modules/.bin/nodemon --exec babel-node src/index.js",
-    "start": "babel src -d build; cp .env build; node build/index.js"
+    "start": "babel src -d build; cp .env build; node build/index.js",
+    "build": "babel src -d build"
   },
   "author": "William Lyon",
   "license": "MIT",
@@ -19,7 +20,7 @@
     "dotenv": "^5.0.1",
     "graphql-tag": "^2.9.2",
     "moment": "^2.22.2",
-    "neo4j-driver": "^1.7.2",
+    "neo4j-driver": "^4.4.2",
     "neo4j-graphql-js": "^0.1.32",
     "node-fetch": "^2.1.2"
   },
