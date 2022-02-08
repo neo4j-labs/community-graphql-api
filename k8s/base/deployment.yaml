@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: community-graphql
+  name: community-graphql
+  namespace: community-graphql
+spec:
+  selector:
+    matchLabels:
+      app: community-graphql
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: community-graphql
+    spec:
+      containers:
+      - image: 715633473519.dkr.ecr.us-east-1.amazonaws.com/community-graphql
+        imagePullPolicy: Always
+        name: community-graphql
+        ports:
+        - containerPort: 3000
+          name: "graphql"
+        env:
+        - name: "NODE_ENV"
+          value: "production"
+        - name: "GRAPHQL_LISTEN_PORT"
+          value: "3000"
+        envFrom:
+        - secretRef:
+            name: community-graphql-secrets

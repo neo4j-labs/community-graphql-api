@@ -1,5 +1,5 @@
 import moment from 'moment';
-import {v1 as neo4j} from "neo4j-driver";
+import * as neo4j from "neo4j-driver";
 import dotenv from "dotenv";
 
 dotenv.config();
